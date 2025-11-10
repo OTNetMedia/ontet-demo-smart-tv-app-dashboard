@@ -1,0 +1,65 @@
+# Node
+ignore/
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs
+*.log
+*.out
+*.err
+debug.log
+
+# Build and cache
+dist/
+build/
+.cache/
+.tmp/
+coverage/
+lib/
+.DS_Store
+
+# OS files
+Thumbs.db
+.DS_Store
+ehthumbs.db
+Icon?
+desktop.ini
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test files
+*.test.js
+*.spec.js
+jest-html-reporters-*
+
+# Misc
+*.tgz
+*.zip
+*.tar
+*.gz
+
+# PM2 / process manager
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Optional for macOS users
+*.icloud
+.AppleDouble
+.Spotlight-V100
+.Trashes
