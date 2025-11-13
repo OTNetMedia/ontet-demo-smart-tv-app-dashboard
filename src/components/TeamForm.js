@@ -82,6 +82,12 @@ const TeamForm = ({ existingData, onSuccess }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            const payload = { ...formData };
+
+            if (!payload._id) {
+                delete payload._id;
+            }
+
             const url = formData._id
                 ? `${config.apiUrl}/team/${formData._id}`
                 : `${config.apiUrl}/team`;
@@ -90,11 +96,12 @@ const TeamForm = ({ existingData, onSuccess }) => {
             const response = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
+                body: JSON.stringify(payload),
             });
 
             if (!response.ok) throw new Error('Failed to save data');
             const data = await response.json();
+
             alert(`Successfully ${formData._id ? 'updated' : 'created'} Team`);
             if (onSuccess) onSuccess(data);
         } catch (error) {
