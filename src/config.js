@@ -1,5 +1,5 @@
 const config = {
-    apiUrl: process.env.REACT_APP_API_URL || 'http://localhost:5001/api',
+    apiUrl: 'https://ontet-demo-smart-tv-app-api.onrender.com/api',
 };
 
 export default config;

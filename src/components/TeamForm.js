@@ -3,93 +3,53 @@ import Select from 'react-select';
 import config from '../config';
 
 const TeamForm = ({ existingData, onSuccess }) => {
-    // Initialize default state
     const [formData, setFormData] = useState({
         _id: '',
         name: '',
         organization: '',
-        genres: [], // array of genre IDs
-        personnel: [], // array of personnel IDs
+        genres: [],
+        personnel: [],
     });
 
-    // State to hold dropdown options
     const [organizations, setOrganizations] = useState([]);
     const [genreOptions, setGenreOptions] = useState([]);
     const [personnelOptions, setPersonnelOptions] = useState([]);
 
-    // Fetch organizations from API to populate organization dropdown
     useEffect(() => {
-        const fetchOrganizations = async () => {
+        const fetchData = async (endpoint, setter) => {
             try {
-                const res = await fetch(`${config.apiUrl}/organization`);
+                const res = await fetch(`${config.apiUrl}/${endpoint}`);
                 if (res.ok) {
                     const data = await res.json();
-                    setOrganizations(data.results || []);
+                    setter(data.results || []);
                 } else {
-                    console.error('Failed to fetch organizations');
+                    console.error(`Failed to fetch ${endpoint}`);
                 }
             } catch (err) {
-                console.error('Error fetching organizations:', err);
+                console.error(`Error fetching ${endpoint}:`, err);
             }
         };
-        fetchOrganizations();
+        fetchData('organization', setOrganizations);
+        fetchData('genre', setGenreOptions);
+        fetchData('personnel', setPersonnelOptions);
     }, []);
 
-    // Fetch genres from API to populate multi-select options
-    useEffect(() => {
-        const fetchGenres = async () => {
-            try {
-                const res = await fetch(`${config.apiUrl}/genre`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setGenreOptions(data.results || []);
-                } else {
-                    console.error('Failed to fetch genres');
-                }
-            } catch (err) {
-                console.error('Error fetching genres:', err);
-            }
-        };
-        fetchGenres();
-    }, []);
-
-    // Fetch personnel from API to populate multi-select options for personnel
-    useEffect(() => {
-        const fetchPersonnel = async () => {
-            try {
-                const res = await fetch(`${config.apiUrl}/personnel`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setPersonnelOptions(data.results || []);
-                } else {
-                    console.error('Failed to fetch personnel');
-                }
-            } catch (err) {
-                console.error('Error fetching personnel:', err);
-            }
-        };
-        fetchPersonnel();
-    }, []);
-
-    // Update form state if existingData is provided.
     useEffect(() => {
         if (existingData) {
-            // For organization: if it's an object, extract its _id; otherwise, use value.
             const orgValue =
                 existingData.organization && typeof existingData.organization === 'object'
                     ? existingData.organization._id
                     : existingData.organization || '';
-            // For genres: if it's an array of objects, extract their _id; if already an array of IDs, use as-is.
             const genresValue = Array.isArray(existingData.genres)
                 ? existingData.genres.map((g) => (g._id ? g._id : g))
                 : [];
-            // For personnel: if it's an array of objects, extract their _id.
             const personnelValue = Array.isArray(existingData.personnel)
                 ? existingData.personnel.map((p) => (p._id ? p._id : p))
                 : [];
 
             setFormData({
-                ...existingData,
+                _id: existingData._id || '',
+                name: existingData.name || '',
                 organization: orgValue,
                 genres: genresValue,
                 personnel: personnelValue,
@@ -98,14 +58,13 @@ const TeamForm = ({ existingData, onSuccess }) => {
     }, [existingData]);
 
     const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
+        const { name, value } = e.target;
         setFormData({
             ...formData,
-            [name]: type === 'checkbox' ? checked : value,
+            [name]: value,
         });
     };
 
-    // Handler for react-select multi-select for genres
     const handleGenresChange = (selectedOptions) => {
         setFormData({
             ...formData,
@@ -113,7 +72,6 @@ const TeamForm = ({ existingData, onSuccess }) => {
         });
     };
 
-    // Handler for react-select multi-select for personnel
     const handlePersonnelChange = (selectedOptions) => {
         setFormData({
             ...formData,
@@ -138,56 +96,62 @@ const TeamForm = ({ existingData, onSuccess }) => {
             if (!response.ok) throw new Error('Failed to save data');
             const data = await response.json();
             alert(`Successfully ${formData._id ? 'updated' : 'created'} Team`);
-            if (typeof onSuccess === 'function') {
-                onSuccess(data);
-            }
+            if (onSuccess) onSuccess(data);
         } catch (error) {
             console.error('Error saving data:', error);
             alert('Error saving data');
         }
     };
 
-    // Map organization options for the select
     const organizationOptions = organizations.map((org) => ({
         value: org._id,
         label: org.name,
     }));
 
-    // Map genre options for react-select
     const mappedGenreOptions = genreOptions.map((genre) => ({
         value: genre._id,
         label: genre.name,
     }));
 
-    // Map personnel options for react-select
     const mappedPersonnelOptions = personnelOptions.map((person) => ({
         value: person._id,
         label: `${person.first_name} ${person.last_name}`,
     }));
 
     return (
-        <div className="form-container">
-            <form onSubmit={handleSubmit}>
-                {formData._id && <input type="hidden" name="_id" value={formData._id} />}
+        <div className="mx-auto max-w-2xl">
+            <form
+                onSubmit={handleSubmit}
+                className="space-y-6 rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200"
+            >
+                <h2 className="text-2xl font-semibold text-slate-800 mb-2">
+                    {formData._id ? 'Edit Team' : 'Create Team'}
+                </h2>
 
+                {/* Name */}
                 <div>
-                    <label>Name: </label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
                     <input
                         type="text"
                         name="name"
                         value={formData.name || ''}
                         onChange={handleChange}
                         required
+                        className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:ring focus:ring-slate-200"
                     />
                 </div>
 
+                {/* Organization */}
                 <div>
-                    <label>Organization: </label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Organization
+                    </label>
                     <select
                         name="organization"
                         value={formData.organization}
                         onChange={handleChange}
                         required
+                        className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:ring focus:ring-slate-200"
                     >
                         <option value="">Select Organization</option>
                         {organizationOptions.map((option) => (
@@ -198,8 +162,9 @@ const TeamForm = ({ existingData, onSuccess }) => {
                     </select>
                 </div>
 
+                {/* Genres */}
                 <div>
-                    <label>Genres: </label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Genres</label>
                     <Select
                         isMulti
                         name="genres"
@@ -209,11 +174,15 @@ const TeamForm = ({ existingData, onSuccess }) => {
                         )}
                         onChange={handleGenresChange}
                         placeholder="Select genres..."
+                        className="text-sm"
                     />
                 </div>
 
+                {/* Personnel */}
                 <div>
-                    <label>Personnel: </label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Personnel
+                    </label>
                     <Select
                         isMulti
                         name="personnel"
@@ -223,10 +192,16 @@ const TeamForm = ({ existingData, onSuccess }) => {
                         )}
                         onChange={handlePersonnelChange}
                         placeholder="Select personnel..."
+                        className="text-sm"
                     />
                 </div>
 
-                <button type="submit">{formData._id ? 'Update' : 'Create'}</button>
+                <button
+                    type="submit"
+                    className="w-full rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+                >
+                    {formData._id ? 'Update Team' : 'Create Team'}
+                </button>
             </form>
         </div>
     );

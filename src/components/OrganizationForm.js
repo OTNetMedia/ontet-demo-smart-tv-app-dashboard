@@ -2,17 +2,19 @@ import React, { useState, useEffect } from 'react';
 import config from '../config';
 
 const OrganizationForm = ({ existingData, onSuccess }) => {
-    // Initialize formData with default values
     const [formData, setFormData] = useState({
         _id: '',
         name: '',
         location: '',
     });
 
-    // If existingData is provided, update the formData state
     useEffect(() => {
         if (existingData) {
-            setFormData(existingData);
+            setFormData({
+                _id: existingData._id || '',
+                name: existingData.name || '',
+                location: existingData.location || '',
+            });
         }
     }, [existingData]);
 
@@ -22,9 +24,7 @@ const OrganizationForm = ({ existingData, onSuccess }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Submitting form...');
         try {
-            // Determine URL and method based on the presence of _id
             const url = formData._id
                 ? `${config.apiUrl}/organization/${formData._id}`
                 : `${config.apiUrl}/organization`;
@@ -35,46 +35,60 @@ const OrganizationForm = ({ existingData, onSuccess }) => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData),
             });
-            console.log('Response received', response);
+
             if (!response.ok) throw new Error('Failed to save data');
             const data = await response.json();
-            console.log('Data parsed', data);
+
             alert(`Successfully ${formData._id ? 'updated' : 'created'} Organization`);
-            if (typeof onSuccess === 'function') {
-                onSuccess(data);
-            }
+            if (onSuccess) onSuccess(data);
         } catch (error) {
-            console.error('Error caught:', error);
+            console.error('Error saving data:', error);
             alert('Error saving data');
         }
     };
 
     return (
-        <div className="form-container">
-            <form onSubmit={handleSubmit}>
-                {/* Optionally include a hidden input for _id if present */}
-                {formData._id && <input type="hidden" name="_id" value={formData._id} />}
+        <div className="mx-auto max-w-md">
+            <form
+                onSubmit={handleSubmit}
+                className="space-y-6 rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200"
+            >
+                <h2 className="text-2xl font-semibold text-slate-800 mb-2">
+                    {formData._id ? 'Edit Organization' : 'Create Organization'}
+                </h2>
+
                 <div>
-                    <label>Name: </label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
                     <input
                         type="text"
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
                         required
+                        className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:ring focus:ring-slate-200"
                     />
                 </div>
+
                 <div>
-                    <label>Location: </label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Location
+                    </label>
                     <input
                         type="text"
                         name="location"
                         value={formData.location}
                         onChange={handleChange}
                         required
+                        className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:ring focus:ring-slate-200"
                     />
                 </div>
-                <button type="submit">{formData._id ? 'Update' : 'Create'}</button>
+
+                <button
+                    type="submit"
+                    className="w-full rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+                >
+                    {formData._id ? 'Update Organization' : 'Create Organization'}
+                </button>
             </form>
         </div>
     );

@@ -31,9 +31,7 @@ const GameManager = () => {
         fetchGames(page);
     }, [page]);
 
-    const handleGameClick = (game) => {
-        setSelectedGame(game);
-    };
+    const handleGameClick = (game) => setSelectedGame(game);
 
     const handleFormSuccess = () => {
         fetchGames(page);
@@ -53,91 +51,161 @@ const GameManager = () => {
         if (!confirmed) return;
 
         try {
-            const res = await fetch(`${config.apiUrl}/game/${id}`, {
-                method: 'DELETE',
-            });
-
+            const res = await fetch(`${config.apiUrl}/game/${id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error('Failed to delete game');
-
-            fetchGames(page); // Refresh list after deletion
+            fetchGames(page);
         } catch (err) {
             alert('Error deleting game: ' + err.message);
         }
     };
 
     return (
-        <div>
+        <div className="max-w-6xl mx-auto">
             {selectedGame ? (
-                <div>
-                    <h2>{selectedGame._id ? 'Update Game' : 'Add New Game'}</h2>
+                <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-2xl font-semibold text-slate-800">
+                            {selectedGame._id ? 'Update Game' : 'Add New Game'}
+                        </h2>
+                        <button
+                            onClick={() => setSelectedGame(null)}
+                            className="rounded-md border border-slate-300 px-3 py-1 text-sm text-slate-700 hover:bg-slate-100"
+                        >
+                            Back to List
+                        </button>
+                    </div>
                     <GameForm existingData={selectedGame} onSuccess={handleFormSuccess} />
-                    <button onClick={() => setSelectedGame(null)}>Back to List</button>
                 </div>
             ) : (
-                <div>
-                    <h2>
-                        Games (Page {page} of {totalPages})
-                    </h2>
-                    {loading && <p>Loading games...</p>}
-                    {error && <p style={{ color: 'red' }}>Error: {error}</p>}
+                <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-2xl font-semibold text-slate-800">
+                            Games (Page {page} of {totalPages})
+                        </h2>
+                        <button
+                            onClick={() => setSelectedGame({})}
+                            className="rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+                        >
+                            Add New Game
+                        </button>
+                    </div>
+
+                    {loading && <p className="text-slate-600">Loading games...</p>}
+                    {error && <p className="text-red-600">Error: {error}</p>}
 
                     {games.length > 0 ? (
-                        <ul>
+                        <ul className="space-y-4">
                             {games.map((game) => (
                                 <li
                                     key={game._id}
                                     onClick={() => handleGameClick(game)}
-                                    style={{
-                                        cursor: 'pointer',
-                                        margin: '12px 0',
-                                        padding: '8px',
-                                        border: '1px solid #ccc',
-                                        borderRadius: '8px',
-                                        alignItems: 'center',
-                                        gap: '12px',
-                                    }}
+                                    className="flex gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md cursor-pointer transition"
                                 >
+                                    {/* Poster */}
                                     {game.poster_path && (
                                         <img
                                             src={game.poster_path}
                                             alt="Poster"
-                                            style={{
-                                                width: '60px',
-                                                height: '90px',
-                                                objectFit: 'cover',
-                                            }}
+                                            className="h-28 w-20 rounded-md object-cover flex-shrink-0"
                                         />
                                     )}
-                                    <div style={{ flex: 1 }}>
-                                        <strong>{game.title}</strong> - {game.date_played}
-                                        {game.home_team && game.away_team && (
+
+                                    {/* Game Info */}
+                                    <div className="flex-1">
+                                        <div className="flex justify-between items-start">
                                             <div>
-                                                {game.home_team.name} vs {game.away_team.name}
+                                                <h3 className="text-lg font-semibold text-slate-800">
+                                                    {game.title || 'Untitled Game'}
+                                                </h3>
+                                                <p className="text-sm text-slate-500">
+                                                    {game.original_title && (
+                                                        <span className="italic">
+                                                            {game.original_title}
+                                                        </span>
+                                                    )}
+                                                    {game.original_language && (
+                                                        <span>
+                                                            {' '}
+                                                            • Lang: {game.original_language}
+                                                        </span>
+                                                    )}
+                                                </p>
                                             </div>
+                                            <p className="text-xs text-slate-400">
+                                                ID: <span className="font-mono">{game._id}</span>
+                                            </p>
+                                        </div>
+
+                                        {/* Teams and Score */}
+                                        {game.home_team && game.away_team && (
+                                            <p className="mt-2 text-slate-700 font-medium">
+                                                {game.home_team.name} {game.home_score} -{' '}
+                                                {game.away_score} {game.away_team.name}
+                                            </p>
                                         )}
+
+                                        {/* Played / Date */}
+                                        <p className="text-sm text-slate-500">
+                                            {game.date_played
+                                                ? `Date Played: ${new Date(
+                                                      game.date_played
+                                                  ).toLocaleDateString()}`
+                                                : 'Not Played Yet'}
+                                            {game.played && (
+                                                <span className="ml-2 text-green-600">
+                                                    (Played)
+                                                </span>
+                                            )}
+                                        </p>
+
+                                        {/* Genres */}
+                                        {game.genres?.length > 0 && (
+                                            <p className="text-sm text-slate-600">
+                                                <span className="font-medium text-slate-700">
+                                                    Genres:
+                                                </span>{' '}
+                                                {game.genres.map((g) => g.name).join(', ')}
+                                            </p>
+                                        )}
+
+                                        {/* Personnel */}
+                                        {game.personnel?.length > 0 && (
+                                            <p className="text-sm text-slate-600">
+                                                <span className="font-medium text-slate-700">
+                                                    Personnel:
+                                                </span>{' '}
+                                                {game.personnel
+                                                    .map((p) => `${p.first_name} ${p.last_name}`)
+                                                    .join(', ')}
+                                            </p>
+                                        )}
+
+                                        {/* Votes & Popularity */}
+                                        <div className="mt-2 flex flex-wrap gap-4 text-xs text-slate-500">
+                                            <span>Votes: {game.vote_count}</span>
+                                            <span>Average: {game.vote_average}</span>
+                                            <span>Popularity: {game.popularity}</span>
+                                            <span>Media: {game.media_type || 'N/A'}</span>
+                                            <span>Video: {game.video ? 'Yes' : 'No'}</span>
+                                        </div>
                                     </div>
+
+                                    {/* Backdrop */}
                                     {game.backdrop_path && (
                                         <img
                                             src={game.backdrop_path}
                                             alt="Backdrop"
-                                            style={{
-                                                width: '120px',
-                                                height: '68px',
-                                                objectFit: 'cover',
-                                            }}
+                                            className="h-24 w-36 rounded-md object-cover flex-shrink-0"
                                         />
                                     )}
+
+                                    {/* Delete Button */}
                                     <button
-                                        onClick={() => handleDelete(game._id)}
-                                        style={{
-                                            marginLeft: '12px',
-                                            backgroundColor: '#e74c3c',
-                                            color: 'white',
-                                            border: 'none',
-                                            padding: '6px 10px',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer',
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDelete(game._id);
                                         }}
+                                        className="self-start rounded-md bg-red-500 px-3 py-1 text-sm font-medium text-white hover:bg-red-600"
                                     >
                                         Delete
                                     </button>
@@ -145,22 +213,37 @@ const GameManager = () => {
                             ))}
                         </ul>
                     ) : (
-                        <p>No games found.</p>
+                        <p className="text-slate-600">No games found.</p>
                     )}
 
                     {/* Pagination */}
-                    <div style={{ marginTop: '20px' }}>
-                        <button onClick={handlePrevPage} disabled={page === 1}>
+                    <div className="flex items-center justify-center gap-3 pt-4">
+                        <button
+                            onClick={handlePrevPage}
+                            disabled={page === 1}
+                            className={`rounded-md border px-3 py-1 text-sm ${
+                                page === 1
+                                    ? 'border-slate-200 text-slate-400 cursor-not-allowed'
+                                    : 'border-slate-300 text-slate-700 hover:bg-slate-100'
+                            }`}
+                        >
                             Previous
                         </button>
-                        <button onClick={handleNextPage} disabled={page === totalPages}>
+                        <span className="text-sm text-slate-600">
+                            Page {page} of {totalPages}
+                        </span>
+                        <button
+                            onClick={handleNextPage}
+                            disabled={page === totalPages}
+                            className={`rounded-md border px-3 py-1 text-sm ${
+                                page === totalPages
+                                    ? 'border-slate-200 text-slate-400 cursor-not-allowed'
+                                    : 'border-slate-300 text-slate-700 hover:bg-slate-100'
+                            }`}
+                        >
                             Next
                         </button>
                     </div>
-
-                    <button style={{ marginTop: '20px' }} onClick={() => setSelectedGame({})}>
-                        Add New Game
-                    </button>
                 </div>
             )}
         </div>

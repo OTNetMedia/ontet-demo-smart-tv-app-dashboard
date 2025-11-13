@@ -3,7 +3,6 @@ import Select from 'react-select';
 import config from '../config';
 
 const GameForm = ({ existingData, onSuccess }) => {
-    // Initialize formData with default values
     const [formData, setFormData] = useState({
         _id: '',
         title: '',
@@ -23,16 +22,14 @@ const GameForm = ({ existingData, onSuccess }) => {
         played: false,
         home_team: '',
         away_team: '',
-        genres: [], // as an array of genre IDs
-        personnel: [], // as an array of personnel IDs
+        genres: [],
+        personnel: [],
     });
 
-    // State to hold dropdown options
     const [teams, setTeams] = useState([]);
     const [personnelOptions, setPersonnelOptions] = useState([]);
     const [genreOptions, setGenreOptions] = useState([]);
 
-    // Fetch teams for home/away dropdowns
     useEffect(() => {
         const fetchTeams = async () => {
             try {
@@ -40,8 +37,6 @@ const GameForm = ({ existingData, onSuccess }) => {
                 if (res.ok) {
                     const data = await res.json();
                     setTeams(data.results || []);
-                } else {
-                    console.error('Failed to fetch teams');
                 }
             } catch (err) {
                 console.error('Error fetching teams:', err);
@@ -50,7 +45,6 @@ const GameForm = ({ existingData, onSuccess }) => {
         fetchTeams();
     }, []);
 
-    // Fetch personnel options for multi-select
     useEffect(() => {
         const fetchPersonnel = async () => {
             try {
@@ -58,8 +52,6 @@ const GameForm = ({ existingData, onSuccess }) => {
                 if (res.ok) {
                     const data = await res.json();
                     setPersonnelOptions(data.results || []);
-                } else {
-                    console.error('Failed to fetch personnel');
                 }
             } catch (err) {
                 console.error('Error fetching personnel:', err);
@@ -68,7 +60,6 @@ const GameForm = ({ existingData, onSuccess }) => {
         fetchPersonnel();
     }, []);
 
-    // Fetch genre options for multi-select
     useEffect(() => {
         const fetchGenres = async () => {
             try {
@@ -76,8 +67,6 @@ const GameForm = ({ existingData, onSuccess }) => {
                 if (res.ok) {
                     const data = await res.json();
                     setGenreOptions(data.results || []);
-                } else {
-                    console.error('Failed to fetch genres');
                 }
             } catch (err) {
                 console.error('Error fetching genres:', err);
@@ -86,7 +75,6 @@ const GameForm = ({ existingData, onSuccess }) => {
         fetchGenres();
     }, []);
 
-    // Populate formData if existingData is provided
     useEffect(() => {
         if (existingData) {
             setFormData({
@@ -106,20 +94,10 @@ const GameForm = ({ existingData, onSuccess }) => {
                 home_score: existingData.home_score || 0,
                 away_score: existingData.away_score || 0,
                 played: existingData.played || false,
-                home_team:
-                    existingData.home_team && typeof existingData.home_team === 'object'
-                        ? existingData.home_team._id
-                        : existingData.home_team || '',
-                away_team:
-                    existingData.away_team && typeof existingData.away_team === 'object'
-                        ? existingData.away_team._id
-                        : existingData.away_team || '',
-                genres: Array.isArray(existingData.genres)
-                    ? existingData.genres.map((g) => g._id)
-                    : [],
-                personnel: Array.isArray(existingData.personnel)
-                    ? existingData.personnel.map((p) => p._id)
-                    : [],
+                home_team: existingData.home_team?._id || existingData.home_team || '',
+                away_team: existingData.away_team?._id || existingData.away_team || '',
+                genres: (existingData.genres || []).map((g) => g._id),
+                personnel: (existingData.personnel || []).map((p) => p._id),
             });
         }
     }, [existingData]);
@@ -132,18 +110,17 @@ const GameForm = ({ existingData, onSuccess }) => {
         });
     };
 
-    // Handlers for react-select multi-selects
     const handlePersonnelChange = (selectedOptions) => {
         setFormData({
             ...formData,
-            personnel: selectedOptions ? selectedOptions.map((option) => option.value) : [],
+            personnel: selectedOptions ? selectedOptions.map((o) => o.value) : [],
         });
     };
 
     const handleGenresChange = (selectedOptions) => {
         setFormData({
             ...formData,
-            genres: selectedOptions ? selectedOptions.map((option) => option.value) : [],
+            genres: selectedOptions ? selectedOptions.map((o) => o.value) : [],
         });
     };
 
@@ -164,7 +141,6 @@ const GameForm = ({ existingData, onSuccess }) => {
                 }
             }
 
-            // Add image files if present
             if (document.getElementById('poster_path').files[0]) {
                 data.append('poster', document.getElementById('poster_path').files[0]);
             }
@@ -172,240 +148,282 @@ const GameForm = ({ existingData, onSuccess }) => {
                 data.append('backdrop', document.getElementById('backdrop_path').files[0]);
             }
 
-            const response = await fetch(url, {
-                method,
-                body: data,
-            });
-
+            const response = await fetch(url, { method, body: data });
             if (!response.ok) throw new Error('Failed to save data');
+
             const result = await response.json();
             alert(`Successfully ${formData._id ? 'updated' : 'created'} Game`);
-            if (typeof onSuccess === 'function') onSuccess(result);
+            if (onSuccess) onSuccess(result);
         } catch (error) {
             console.error('Error saving data:', error);
             alert('Error saving data');
         }
     };
 
-    // Convert fetched options into react-select friendly format
-    const teamSelectOptions = teams.map((team) => ({
-        value: team._id,
-        label: team.name,
+    const teamSelectOptions = teams.map((t) => ({ value: t._id, label: t.name }));
+    const personnelSelectOptions = personnelOptions.map((p) => ({
+        value: p._id,
+        label: `${p.first_name} ${p.last_name}`,
     }));
-
-    const personnelSelectOptions = personnelOptions.map((person) => ({
-        value: person._id,
-        label: `${person.first_name} ${person.last_name}`,
-    }));
-
-    const genreSelectOptions = genreOptions.map((genre) => ({
-        value: genre._id,
-        label: genre.name,
+    const genreSelectOptions = genreOptions.map((g) => ({
+        value: g._id,
+        label: g.name,
     }));
 
     return (
-        <div className="form-container">
-            <form onSubmit={handleSubmit}>
-                {formData._id && <input type="hidden" name="_id" value={formData._id} />}
+        <div className="mx-auto max-w-3xl">
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <h2 className="text-2xl font-semibold text-slate-800 mb-4">
+                    {formData._id ? 'Edit Game' : 'Create Game'}
+                </h2>
 
-                <div>
-                    <label>Title: </label>
-                    <input
-                        type="text"
-                        name="title"
-                        value={formData.title}
-                        onChange={handleChange}
-                        required
-                    />
-                </div>
+                <div className="grid grid-cols-1 gap-4">
+                    {/* Title */}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                            Title
+                        </label>
+                        <input
+                            type="text"
+                            name="title"
+                            value={formData.title}
+                            onChange={handleChange}
+                            required
+                            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:ring focus:ring-slate-200"
+                        />
+                    </div>
 
-                <div>
-                    <label>Video: </label>
-                    <input
-                        type="checkbox"
-                        name="video"
-                        checked={formData.video}
-                        onChange={handleChange}
-                    />
-                </div>
+                    {/* Video */}
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            name="video"
+                            checked={formData.video}
+                            onChange={handleChange}
+                            className="h-4 w-4 accent-slate-700"
+                        />
+                        <label className="text-sm font-medium text-slate-700">Video</label>
+                    </div>
 
-                <div>
-                    <label>Media Type: </label>
-                    <input
-                        type="text"
-                        name="media_type"
-                        value={formData.media_type}
-                        onChange={handleChange}
-                        required
-                    />
-                </div>
+                    {/* Media Type */}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                            Media Type
+                        </label>
+                        <input
+                            type="text"
+                            name="media_type"
+                            value={formData.media_type}
+                            onChange={handleChange}
+                            required
+                            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:ring focus:ring-slate-200"
+                        />
+                    </div>
 
-                <div>
-                    <label>Original Language: </label>
-                    <input
-                        type="text"
-                        name="original_language"
-                        value={formData.original_language}
-                        onChange={handleChange}
-                    />
-                </div>
+                    {/* Language and Title */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Original Language
+                            </label>
+                            <input
+                                type="text"
+                                name="original_language"
+                                value={formData.original_language}
+                                onChange={handleChange}
+                                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:ring focus:ring-slate-200"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Original Title
+                            </label>
+                            <input
+                                type="text"
+                                name="original_title"
+                                value={formData.original_title}
+                                onChange={handleChange}
+                                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:ring focus:ring-slate-200"
+                            />
+                        </div>
+                    </div>
 
-                <div>
-                    <label>Original Title: </label>
-                    <input
-                        type="text"
-                        name="original_title"
-                        value={formData.original_title}
-                        onChange={handleChange}
-                    />
-                </div>
+                    {/* Overview */}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                            Overview
+                        </label>
+                        <textarea
+                            name="overview"
+                            value={formData.overview}
+                            onChange={handleChange}
+                            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:ring focus:ring-slate-200"
+                        />
+                    </div>
 
-                <div>
-                    <label>Overview: </label>
-                    <textarea name="overview" value={formData.overview} onChange={handleChange} />
-                </div>
+                    {/* Popularity */}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                            Popularity
+                        </label>
+                        <input
+                            type="number"
+                            name="popularity"
+                            value={formData.popularity}
+                            onChange={handleChange}
+                            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                        />
+                    </div>
 
-                <div>
-                    <label>Popularity: </label>
-                    <input
-                        type="number"
-                        name="popularity"
-                        value={formData.popularity}
-                        onChange={handleChange}
-                    />
-                </div>
+                    {/* File Inputs */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Poster
+                            </label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                id="poster_path"
+                                className="block w-full text-sm text-slate-600"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Backdrop
+                            </label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                id="backdrop_path"
+                                className="block w-full text-sm text-slate-600"
+                            />
+                        </div>
+                    </div>
 
-                <div>
-                    <label>Poster Image: </label>
-                    <input type="file" accept="image/*" id="poster_path" />
-                </div>
+                    {/* Scores */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Home Score
+                            </label>
+                            <input
+                                type="number"
+                                name="home_score"
+                                value={formData.home_score}
+                                onChange={handleChange}
+                                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Away Score
+                            </label>
+                            <input
+                                type="number"
+                                name="away_score"
+                                value={formData.away_score}
+                                onChange={handleChange}
+                                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                            />
+                        </div>
+                    </div>
 
-                <div>
-                    <label>Backdrop Image: </label>
-                    <input type="file" accept="image/*" id="backdrop_path" />
-                </div>
+                    {/* Played */}
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            name="played"
+                            checked={formData.played}
+                            onChange={handleChange}
+                            className="h-4 w-4 accent-slate-700"
+                        />
+                        <label className="text-sm font-medium text-slate-700">Played</label>
+                    </div>
 
-                <div>
-                    <label>Vote Average: </label>
-                    <input
-                        type="number"
-                        name="vote_average"
-                        value={formData.vote_average}
-                        onChange={handleChange}
-                    />
-                </div>
+                    {/* Teams */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Home Team
+                            </label>
+                            <select
+                                name="home_team"
+                                value={formData.home_team}
+                                onChange={handleChange}
+                                required
+                                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                            >
+                                <option value="">Select Home Team</option>
+                                {teamSelectOptions.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Away Team
+                            </label>
+                            <select
+                                name="away_team"
+                                value={formData.away_team}
+                                onChange={handleChange}
+                                required
+                                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                            >
+                                <option value="">Select Away Team</option>
+                                {teamSelectOptions.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
 
-                <div>
-                    <label>Vote Count: </label>
-                    <input
-                        type="number"
-                        name="vote_count"
-                        value={formData.vote_count}
-                        onChange={handleChange}
-                    />
-                </div>
+                    {/* Genres */}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                            Genres
+                        </label>
+                        <Select
+                            isMulti
+                            name="genres"
+                            options={genreSelectOptions}
+                            value={genreSelectOptions.filter((o) =>
+                                formData.genres.includes(o.value)
+                            )}
+                            onChange={handleGenresChange}
+                            className="react-select-container text-sm"
+                        />
+                    </div>
 
-                <div>
-                    <label>Date Played: </label>
-                    <input
-                        type="date"
-                        name="date_played"
-                        value={formData.date_played}
-                        onChange={handleChange}
-                    />
-                </div>
+                    {/* Personnel */}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                            Personnel
+                        </label>
+                        <Select
+                            isMulti
+                            name="personnel"
+                            options={personnelSelectOptions}
+                            value={personnelSelectOptions.filter((o) =>
+                                formData.personnel.includes(o.value)
+                            )}
+                            onChange={handlePersonnelChange}
+                            className="react-select-container text-sm"
+                        />
+                    </div>
 
-                <div>
-                    <label>Home Score: </label>
-                    <input
-                        type="number"
-                        name="home_score"
-                        value={formData.home_score}
-                        onChange={handleChange}
-                    />
-                </div>
-
-                <div>
-                    <label>Away Score: </label>
-                    <input
-                        type="number"
-                        name="away_score"
-                        value={formData.away_score}
-                        onChange={handleChange}
-                    />
-                </div>
-
-                <div>
-                    <label>Played: </label>
-                    <input
-                        type="checkbox"
-                        name="played"
-                        checked={formData.played}
-                        onChange={handleChange}
-                    />
-                </div>
-
-                <div>
-                    <label>Home Team: </label>
-                    <select
-                        name="home_team"
-                        value={formData.home_team}
-                        onChange={handleChange}
-                        required
+                    <button
+                        type="submit"
+                        className="mt-4 w-full rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
                     >
-                        <option value="">Select Home Team</option>
-                        {teamSelectOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                                {option.label}
-                            </option>
-                        ))}
-                    </select>
+                        {formData._id ? 'Update Game' : 'Create Game'}
+                    </button>
                 </div>
-
-                <div>
-                    <label>Away Team: </label>
-                    <select
-                        name="away_team"
-                        value={formData.away_team}
-                        onChange={handleChange}
-                        required
-                    >
-                        <option value="">Select Away Team</option>
-                        {teamSelectOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                                {option.label}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                <div>
-                    <label>Genres: </label>
-                    <Select
-                        isMulti
-                        name="genres"
-                        options={genreSelectOptions}
-                        value={genreSelectOptions.filter((option) =>
-                            formData.genres.includes(option.value)
-                        )}
-                        onChange={handleGenresChange}
-                    />
-                </div>
-
-                <div>
-                    <label>Personnel: </label>
-                    <Select
-                        isMulti
-                        name="personnel"
-                        options={personnelSelectOptions}
-                        value={personnelSelectOptions.filter((option) =>
-                            formData.personnel.includes(option.value)
-                        )}
-                        onChange={handlePersonnelChange}
-                    />
-                </div>
-
-                <button type="submit">{formData._id ? 'Update' : 'Create'}</button>
             </form>
         </div>
     );

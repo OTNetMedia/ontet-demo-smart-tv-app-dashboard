@@ -17,7 +17,7 @@ const PersonnelManager = () => {
             const response = await fetch(`${config.apiUrl}/personnel?page=${pageNumber}&limit=5`);
             if (!response.ok) throw new Error('Failed to fetch personnel');
             const data = await response.json();
-            setPersonnelList(data.results);
+            setPersonnelList(data.results || []);
             setPage(data.page);
             setTotalPages(data.total_pages);
         } catch (err) {
@@ -31,9 +31,7 @@ const PersonnelManager = () => {
         fetchPersonnel(page);
     }, [page]);
 
-    const handlePersonnelClick = (personnel) => {
-        setSelectedPersonnel(personnel);
-    };
+    const handlePersonnelClick = (personnel) => setSelectedPersonnel(personnel);
 
     const handleFormSuccess = () => {
         fetchPersonnel(page);
@@ -45,9 +43,7 @@ const PersonnelManager = () => {
         if (!confirmDelete) return;
 
         try {
-            const res = await fetch(`${config.apiUrl}/personnel/${id}`, {
-                method: 'DELETE',
-            });
+            const res = await fetch(`${config.apiUrl}/personnel/${id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error('Failed to delete personnel');
             fetchPersonnel(page);
         } catch (err) {
@@ -64,56 +60,77 @@ const PersonnelManager = () => {
     };
 
     return (
-        <div>
+        <div className="max-w-5xl mx-auto">
             {selectedPersonnel ? (
-                <div>
-                    <h2>{selectedPersonnel._id ? 'Update Personnel' : 'Add New Personnel'}</h2>
+                <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-2xl font-semibold text-slate-800">
+                            {selectedPersonnel._id ? 'Update Personnel' : 'Add New Personnel'}
+                        </h2>
+                        <button
+                            onClick={() => setSelectedPersonnel(null)}
+                            className="rounded-md border border-slate-300 px-3 py-1 text-sm text-slate-700 hover:bg-slate-100"
+                        >
+                            Back to List
+                        </button>
+                    </div>
+
                     <PersonnelForm existingData={selectedPersonnel} onSuccess={handleFormSuccess} />
-                    <button onClick={() => setSelectedPersonnel(null)}>Back to List</button>
                 </div>
             ) : (
-                <div>
-                    <h2>
-                        Personnel (Page {page} of {totalPages})
-                    </h2>
-                    {loading && <p>Loading personnel...</p>}
-                    {error && <p style={{ color: 'red' }}>Error: {error}</p>}
+                <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-2xl font-semibold text-slate-800">
+                            Personnel (Page {page} of {totalPages})
+                        </h2>
+                        <button
+                            onClick={() => setSelectedPersonnel({})}
+                            className="rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+                        >
+                            Add New Personnel
+                        </button>
+                    </div>
+
+                    {loading && <p className="text-slate-600">Loading personnel...</p>}
+                    {error && <p className="text-red-600">Error: {error}</p>}
+
                     {personnelList.length > 0 ? (
-                        <ul>
+                        <ul className="space-y-3">
                             {personnelList.map((person) => (
                                 <li
                                     key={person._id}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        marginBottom: '10px',
-                                    }}
+                                    className="flex items-center gap-4 rounded-lg border border-slate-200 bg-white p-3 shadow-sm hover:shadow-md transition"
                                 >
-                                    <img
-                                        src={person.image}
-                                        alt={person.first_name}
-                                        style={{
-                                            width: '120px',
-                                            height: '190px',
-                                            borderRadius: '10%',
-                                            marginRight: '10px',
-                                        }}
-                                    />
+                                    {person.image && (
+                                        <img
+                                            src={person.image}
+                                            alt={`${person.first_name} ${person.last_name}`}
+                                            className="h-32 w-24 rounded-md object-cover"
+                                        />
+                                    )}
                                     <div
-                                        style={{ cursor: 'pointer' }}
+                                        className="flex-1 cursor-pointer"
                                         onClick={() => handlePersonnelClick(person)}
                                     >
-                                        <strong>
+                                        <div className="font-medium text-slate-800">
                                             {person.first_name} {person.last_name}
-                                        </strong>{' '}
-                                        — {person.role}
-                                        {person.team &&
-                                            person.team.name &&
-                                            ` (Team: ${person.team.name})`}
+                                        </div>
+                                        <div className="text-sm text-slate-600">
+                                            {person.role}
+                                            {person.team?.name && (
+                                                <span className="text-slate-500">
+                                                    {' '}
+                                                    (Team: {person.team.name})
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                     <button
-                                        onClick={() => handleDelete(person._id)}
-                                        style={{ marginLeft: '10px' }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDelete(person._id);
+                                        }}
+                                        className="rounded-md bg-red-500 px-3 py-1 text-sm font-medium text-white hover:bg-red-600"
                                     >
                                         Delete
                                     </button>
@@ -121,21 +138,37 @@ const PersonnelManager = () => {
                             ))}
                         </ul>
                     ) : (
-                        <p>No personnel found.</p>
+                        <p className="text-slate-600">No personnel found.</p>
                     )}
 
-                    <div style={{ marginTop: '20px' }}>
-                        <button onClick={handlePrevPage} disabled={page === 1}>
+                    {/* Pagination */}
+                    <div className="flex items-center justify-center gap-3 pt-4">
+                        <button
+                            onClick={handlePrevPage}
+                            disabled={page === 1}
+                            className={`rounded-md border px-3 py-1 text-sm ${
+                                page === 1
+                                    ? 'border-slate-200 text-slate-400 cursor-not-allowed'
+                                    : 'border-slate-300 text-slate-700 hover:bg-slate-100'
+                            }`}
+                        >
                             Previous
                         </button>
-                        <button onClick={handleNextPage} disabled={page === totalPages}>
+                        <span className="text-sm text-slate-600">
+                            Page {page} of {totalPages}
+                        </span>
+                        <button
+                            onClick={handleNextPage}
+                            disabled={page === totalPages}
+                            className={`rounded-md border px-3 py-1 text-sm ${
+                                page === totalPages
+                                    ? 'border-slate-200 text-slate-400 cursor-not-allowed'
+                                    : 'border-slate-300 text-slate-700 hover:bg-slate-100'
+                            }`}
+                        >
                             Next
                         </button>
                     </div>
-
-                    <button style={{ marginTop: '20px' }} onClick={() => setSelectedPersonnel({})}>
-                        Add New Personnel
-                    </button>
                 </div>
             )}
         </div>
